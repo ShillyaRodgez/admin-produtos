@@ -38,13 +38,33 @@ function renderProducts() {
 const form = document.getElementById('product-form');
 const saveBtn = document.getElementById('save-btn');
 const cancelBtn = document.getElementById('cancel-btn');
-form.onsubmit = function(e) {
+
+function getImageInputValue() {
+  const urlInput = document.getElementById('product-image-url');
+  const fileInput = document.getElementById('product-image-file');
+  if (fileInput.files && fileInput.files[0]) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        resolve(e.target.result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+  } else if (urlInput.value.trim() !== '') {
+    return Promise.resolve(urlInput.value.trim());
+  } else {
+    return Promise.resolve('');
+  }
+}
+
+form.onsubmit = async function(e) {
   e.preventDefault();
   const id = document.getElementById('product-id').value;
   const name = document.getElementById('product-name').value.trim();
   const desc = document.getElementById('product-desc').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
-  const image = document.getElementById('product-image').value.trim();
+  const image = await getImageInputValue();
   const category = document.getElementById('product-category').value.trim();
   if(!name || !desc || !image || !category || isNaN(price) || price < 0) {
     Swal.fire('Preencha todos os campos corretamente!','', 'warning');
@@ -80,7 +100,8 @@ window.editProduct = function(idx) {
   document.getElementById('product-name').value = prod.name;
   document.getElementById('product-desc').value = prod.desc;
   document.getElementById('product-price').value = prod.price;
-  document.getElementById('product-image').value = prod.image;
+  document.getElementById('product-image-url').value = prod.image.startsWith('data:') ? '' : prod.image;
+  document.getElementById('product-image-file').value = '';
   document.getElementById('product-category').value = prod.category;
   saveBtn.textContent = 'Salvar Alterações';
   cancelBtn.style.display = 'inline-block';
@@ -106,7 +127,6 @@ window.deleteProduct = function(idx) {
   });
 };
 
-// Promoções
 const promoModal = document.getElementById('promo-modal');
 const promoPercent = document.getElementById('promo-percent');
 const applyPromoBtn = document.getElementById('apply-promo-btn');
@@ -136,7 +156,6 @@ applyPromoBtn.onclick = function() {
   Swal.fire('Promoção aplicada!','','success');
 };
 
-// Inicialização
 window.onload = function() {
   renderProducts();
 };
