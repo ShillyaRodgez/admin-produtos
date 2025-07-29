@@ -61,7 +61,6 @@ function getImageInputValue() {
 
 form.onsubmit = async function(e) {
   e.preventDefault();
-  document.getElementById('product-id').value = '';
   const id = document.getElementById('product-id').value;
   const name = document.getElementById('product-name').value.trim();
   const desc = document.getElementById('product-desc').value.trim();
@@ -83,6 +82,7 @@ form.onsubmit = async function(e) {
   saveProducts(products);
   form.reset();
   document.getElementById('product-image-file').value = '';
+  document.getElementById('product-image-url').value = '';
   document.getElementById('product-id').value = '';
   saveBtn.textContent = 'Adicionar Produto';
   cancelBtn.style.display = 'none';
