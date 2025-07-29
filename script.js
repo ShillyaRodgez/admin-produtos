@@ -54,12 +54,14 @@ function getImageInputValue() {
   } else if (urlInput.value.trim() !== '') {
     return Promise.resolve(urlInput.value.trim());
   } else {
-    return Promise.resolve('');
+    // Retorna null explicitamente para facilitar a validação
+    return Promise.resolve(null);
   }
 }
 
 form.onsubmit = async function(e) {
   e.preventDefault();
+  document.getElementById('product-id').value = '';
   const id = document.getElementById('product-id').value;
   const name = document.getElementById('product-name').value.trim();
   const desc = document.getElementById('product-desc').value.trim();
@@ -80,6 +82,7 @@ form.onsubmit = async function(e) {
   }
   saveProducts(products);
   form.reset();
+  document.getElementById('product-image-file').value = '';
   document.getElementById('product-id').value = '';
   saveBtn.textContent = 'Adicionar Produto';
   cancelBtn.style.display = 'none';
