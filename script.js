@@ -1,6 +1,6 @@
 // Configuração do Cloudinary
-const CLOUDINARY_CLOUD_NAME = 'SEU_CLOUD_NAME'; // Substitua pelo seu cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'SEU_UPLOAD_PRESET'; // Substitua pelo seu upload preset
+const CLOUDINARY_CLOUD_NAME = 'dnl9vuqdi'; // Substitua pelo seu cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'produtos_present'; // Substitua pelo seu upload preset
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 // Verificar se Cloudinary está configurado
