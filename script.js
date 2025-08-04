@@ -1,3 +1,8 @@
+// Configuração do Cloudinary
+const CLOUDINARY_CLOUD_NAME = 'SEU_CLOUD_NAME'; // Substitua pelo seu cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'SEU_UPLOAD_PRESET'; // Substitua pelo seu upload preset
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
 // Utilidades para localStorage
 function getProducts() {
   return JSON.parse(localStorage.getItem('products') || '[]');
@@ -39,19 +44,39 @@ const form = document.getElementById('product-form');
 const saveBtn = document.getElementById('save-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 
+// Função para fazer upload para Cloudinary
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  
+  try {
+    const response = await fetch(CLOUDINARY_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro no upload da imagem');
+    }
+    
+    const data = await response.json();
+    return data.secure_url;
+  } catch (error) {
+    console.error('Erro ao fazer upload:', error);
+    throw error;
+  }
+}
+
 function getImageInputValue() {
   const urlInput = document.getElementById('product-image-url');
   const fileInput = document.getElementById('product-image-file');
+  
   if (fileInput.files && fileInput.files[0]) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        resolve(e.target.result);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(fileInput.files[0]);
-    });
+    // Se há um arquivo, faz upload para Cloudinary
+    return uploadToCloudinary(fileInput.files[0]);
   } else if (urlInput.value.trim() !== '') {
+    // Se há uma URL, usa diretamente
     return Promise.resolve(urlInput.value.trim());
   } else {
     // Retorna null explicitamente para facilitar a validação
@@ -61,32 +86,58 @@ function getImageInputValue() {
 
 form.onsubmit = async function(e) {
   e.preventDefault();
+  
+  // Validação inicial
   const id = document.getElementById('product-id').value;
   const name = document.getElementById('product-name').value.trim();
   const desc = document.getElementById('product-desc').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
-  const image = await getImageInputValue();
   const category = document.getElementById('product-category').value.trim();
-  if(!name || !desc || !image || !category || isNaN(price) || price < 0) {
+  
+  if(!name || !desc || !category || isNaN(price) || price < 0) {
     Swal.fire('Preencha todos os campos corretamente!','', 'warning');
     return;
   }
-  let products = getProducts();
-  if(id) {
-    products[id] = {...products[id], name, desc, price, image, category};
-    Swal.fire('Produto atualizado!','', 'success');
-  } else {
-    products.push({name, desc, price, image, category, promo:{percent:0}});
-    Swal.fire('Produto adicionado!','', 'success');
+  
+  // Verificar se há imagem
+  const urlInput = document.getElementById('product-image-url');
+  const fileInput = document.getElementById('product-image-file');
+  if (!fileInput.files[0] && !urlInput.value.trim()) {
+    Swal.fire('Adicione uma imagem (arquivo ou URL)!','', 'warning');
+    return;
   }
-  saveProducts(products);
-  form.reset();
-  document.getElementById('product-image-file').value = '';
-  document.getElementById('product-image-url').value = '';
-  document.getElementById('product-id').value = '';
-  saveBtn.textContent = 'Adicionar Produto';
-  cancelBtn.style.display = 'none';
-  renderProducts();
+  
+  // Mostrar loading
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = 'Processando...';
+  saveBtn.disabled = true;
+  
+  try {
+    const image = await getImageInputValue();
+    
+    let products = getProducts();
+    if(id) {
+      products[id] = {...products[id], name, desc, price, image, category};
+      Swal.fire('Produto atualizado!','', 'success');
+    } else {
+      products.push({name, desc, price, image, category, promo:{percent:0}});
+      Swal.fire('Produto adicionado!','', 'success');
+    }
+    saveProducts(products);
+    form.reset();
+    document.getElementById('product-image-file').value = '';
+    document.getElementById('product-image-url').value = '';
+    document.getElementById('product-id').value = '';
+    saveBtn.textContent = 'Adicionar Produto';
+    cancelBtn.style.display = 'none';
+    renderProducts();
+  } catch (error) {
+    console.error('Erro ao salvar produto:', error);
+    Swal.fire('Erro ao fazer upload da imagem!', 'Verifique sua conexão e tente novamente.', 'error');
+  } finally {
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
+  }
 };
 
 cancelBtn.onclick = function() {
@@ -161,4 +212,7 @@ applyPromoBtn.onclick = function() {
 
 window.onload = function() {
   renderProducts();
+};
+window.debugListProducts = function() {
+  alert(JSON.stringify(getProducts(), null, 2));
 };
