@@ -3,6 +3,11 @@ const CLOUDINARY_CLOUD_NAME = 'SEU_CLOUD_NAME'; // Substitua pelo seu cloud name
 const CLOUDINARY_UPLOAD_PRESET = 'SEU_UPLOAD_PRESET'; // Substitua pelo seu upload preset
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
+// Verificar se Cloudinary está configurado
+const isCloudinaryConfigured = () => {
+  return CLOUDINARY_CLOUD_NAME !== 'SEU_CLOUD_NAME' && CLOUDINARY_UPLOAD_PRESET !== 'SEU_UPLOAD_PRESET';
+};
+
 // Utilidades para localStorage
 function getProducts() {
   return JSON.parse(localStorage.getItem('products') || '[]');
@@ -73,8 +78,21 @@ function getImageInputValue() {
   const fileInput = document.getElementById('product-image-file');
   
   if (fileInput.files && fileInput.files[0]) {
-    // Se há um arquivo, faz upload para Cloudinary
-    return uploadToCloudinary(fileInput.files[0]);
+    // Verificar se Cloudinary está configurado
+    if (isCloudinaryConfigured()) {
+      // Se configurado, faz upload para Cloudinary
+      return uploadToCloudinary(fileInput.files[0]);
+    } else {
+      // Se não configurado, usa base64 (modo compatibilidade)
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          resolve(e.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(fileInput.files[0]);
+      });
+    }
   } else if (urlInput.value.trim() !== '') {
     // Se há uma URL, usa diretamente
     return Promise.resolve(urlInput.value.trim());
@@ -113,31 +131,43 @@ form.onsubmit = async function(e) {
   saveBtn.disabled = true;
   
   try {
-    const image = await getImageInputValue();
-    
-    let products = getProducts();
-    if(id) {
-      products[id] = {...products[id], name, desc, price, image, category};
-      Swal.fire('Produto atualizado!','', 'success');
-    } else {
-      products.push({name, desc, price, image, category, promo:{percent:0}});
-      Swal.fire('Produto adicionado!','', 'success');
-    }
-    saveProducts(products);
-    form.reset();
-    document.getElementById('product-image-file').value = '';
-    document.getElementById('product-image-url').value = '';
-    document.getElementById('product-id').value = '';
-    saveBtn.textContent = 'Adicionar Produto';
-    cancelBtn.style.display = 'none';
-    renderProducts();
-  } catch (error) {
-    console.error('Erro ao salvar produto:', error);
-    Swal.fire('Erro ao fazer upload da imagem!', 'Verifique sua conexão e tente novamente.', 'error');
-  } finally {
-    saveBtn.textContent = originalText;
-    saveBtn.disabled = false;
-  }
+     const image = await getImageInputValue();
+     
+     // Mostrar aviso se usando modo compatibilidade
+     if (!isCloudinaryConfigured() && fileInput.files[0]) {
+       console.warn('⚠️ Cloudinary não configurado. Usando armazenamento local (limitado).');
+     }
+     
+     let products = getProducts();
+     if(id) {
+       products[id] = {...products[id], name, desc, price, image, category};
+       Swal.fire('Produto atualizado!','', 'success');
+     } else {
+       products.push({name, desc, price, image, category, promo:{percent:0}});
+       const message = isCloudinaryConfigured() ? 
+         'Produto adicionado!' : 
+         'Produto adicionado! (Configure Cloudinary para melhor performance)';
+       Swal.fire(message,'', 'success');
+     }
+     saveProducts(products);
+     form.reset();
+     document.getElementById('product-image-file').value = '';
+     document.getElementById('product-image-url').value = '';
+     document.getElementById('product-id').value = '';
+     saveBtn.textContent = 'Adicionar Produto';
+     cancelBtn.style.display = 'none';
+     renderProducts();
+   } catch (error) {
+     console.error('Erro ao salvar produto:', error);
+     if (error.message.includes('Cloudinary') || error.message.includes('upload')) {
+       Swal.fire('Erro no Cloudinary!', 'Configure suas credenciais no arquivo script.js. Consulte CLOUDINARY_SETUP.md', 'error');
+     } else {
+       Swal.fire('Erro ao salvar produto!', 'Tente novamente.', 'error');
+     }
+   } finally {
+     saveBtn.textContent = originalText;
+     saveBtn.disabled = false;
+   }
 };
 
 cancelBtn.onclick = function() {
