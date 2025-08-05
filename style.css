@@ -17,3 +17,8 @@ tr:last-child { border-bottom: none; }
 @media (max-width: 900px) { .container { padding: 18px 6px; } th, td { padding: 10px 4px; } }
 @media (max-width: 600px) { .container { padding: 8px 2px; } table, thead, tbody, th, td, tr { display: block; } th { position: absolute; left: -9999px; top: -9999px; } td { border: none; position: relative; padding-left: 50%; min-height: 40px; } td:before { position: absolute; left: 10px; top: 12px; width: 45%; white-space: nowrap; font-weight: 600; color: #b87333; } tr { margin-bottom: 18px; } }
 .product-img { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; border: 1.5px solid #e5c07b; background: #fff; display: block; margin: 0 auto; }
+.products-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.export-btn { background: #28a745; color: #fff; border: none; border-radius: 6px; padding: 10px 18px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+.export-btn:hover { background: #218838; }
+.export-btn i { font-size: 14px; }
+@media (max-width: 600px) { .products-header { flex-direction: column; gap: 15px; } .export-btn { width: 100%; justify-content: center; } }

@@ -207,6 +207,51 @@ window.deleteProduct = function(idx) {
 
 
 
+// Função para exportar produtos para JSON
+function exportProducts() {
+  const products = getProducts();
+  
+  if (products.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Nenhum produto encontrado',
+      text: 'Adicione alguns produtos antes de exportar.'
+    });
+    return;
+  }
+
+  // Criar arquivo JSON
+  const dataStr = JSON.stringify(products, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  
+  // Criar link de download
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(dataBlob);
+  link.download = 'produtos-loja.json';
+  
+  // Fazer download
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  // Mostrar mensagem de sucesso
+  Swal.fire({
+    icon: 'success',
+    title: 'Produtos exportados!',
+    text: `${products.length} produto(s) exportado(s) com sucesso.`,
+    timer: 2000,
+    showConfirmButton: false
+  });
+}
+
+// Event listener para o botão de exportar
+document.addEventListener('DOMContentLoaded', function() {
+  const exportBtn = document.getElementById('export-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', exportProducts);
+  }
+});
+
 window.onload = function() {
   renderProducts();
 };
