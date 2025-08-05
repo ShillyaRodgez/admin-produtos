@@ -23,18 +23,12 @@ function renderProducts() {
   const products = getProducts();
   products.forEach((prod, idx) => {
     const tr = document.createElement('tr');
-    if(prod.promo && prod.promo.percent > 0) tr.classList.add('promo-row');
     tr.innerHTML = `
       <td><img src="${prod.image}" alt="${prod.name}" class="product-img"></td>
       <td>${prod.name}</td>
       <td>${prod.desc}</td>
       <td>${prod.category}</td>
-      <td>
-        R$ ${prod.promo && prod.promo.percent > 0 ? `<span style='text-decoration:line-through;color:#888'>${Number(prod.price).toFixed(2)}</span> <span style='color:#eab308;font-weight:700'>${(prod.price*(1-prod.promo.percent/100)).toFixed(2)}</span>` : Number(prod.price).toFixed(2)}
-      </td>
-      <td>
-        ${prod.promo && prod.promo.percent > 0 ? `<span class='promo-badge'><i class='fa fa-tag'></i> -${prod.promo.percent}%</span>` : `<button class='action-btn promo' title='Aplicar promoção' onclick='openPromoModal(${idx})'><i class='fa fa-percent'></i></button>`}
-      </td>
+      <td>R$ ${Number(prod.price).toFixed(2)}</td>
       <td>
         <button class='action-btn edit' title='Editar' onclick='editProduct(${idx})'><i class='fa fa-edit'></i></button>
         <button class='action-btn delete' title='Excluir' onclick='deleteProduct(${idx})'><i class='fa fa-trash'></i></button>
@@ -143,7 +137,7 @@ form.onsubmit = async function(e) {
        products[id] = {...products[id], name, desc, price, image, category};
        Swal.fire('Produto atualizado!','', 'success');
      } else {
-       products.push({name, desc, price, image, category, promo:{percent:0}});
+       products.push({name, desc, price, image, category});
        const message = isCloudinaryConfigured() ? 
          'Produto adicionado!' : 
          'Produto adicionado! (Configure Cloudinary para melhor performance)';
@@ -211,34 +205,7 @@ window.deleteProduct = function(idx) {
   });
 };
 
-const promoModal = document.getElementById('promo-modal');
-const promoPercent = document.getElementById('promo-percent');
-const applyPromoBtn = document.getElementById('apply-promo-btn');
-let promoIdx = null;
-window.openPromoModal = function(idx) {
-  promoIdx = idx;
-  promoPercent.value = '';
-  promoModal.style.display = 'block';
-};
-document.querySelector('.close').onclick = function() {
-  promoModal.style.display = 'none';
-};
-window.onclick = function(event) {
-  if(event.target == promoModal) promoModal.style.display = 'none';
-};
-applyPromoBtn.onclick = function() {
-  const percent = parseInt(promoPercent.value);
-  if(isNaN(percent) || percent < 1 || percent > 99) {
-    Swal.fire('Informe um percentual válido (1-99)!','','warning');
-    return;
-  }
-  let products = getProducts();
-  products[promoIdx].promo = {percent};
-  saveProducts(products);
-  promoModal.style.display = 'none';
-  renderProducts();
-  Swal.fire('Promoção aplicada!','','success');
-};
+
 
 window.onload = function() {
   renderProducts();

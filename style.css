@@ -13,8 +13,7 @@ th, td { padding: 14px 10px; text-align: left; }
 th { background: #b87333; color: #fff; font-weight: 600; }
 tr { border-bottom: 1px solid #e5c07b; }
 tr:last-child { border-bottom: none; }
-tr.promo { background: #fffbe6; }
-.promo-badge { background: #e5c07b; color: #b87333; border-radius: 12px; padding: 4px 12px; font-size: 0.95em; font-weight: 600; margin-left: 8px; }
+
 @media (max-width: 900px) { .container { padding: 18px 6px; } th, td { padding: 10px 4px; } }
 @media (max-width: 600px) { .container { padding: 8px 2px; } table, thead, tbody, th, td, tr { display: block; } th { position: absolute; left: -9999px; top: -9999px; } td { border: none; position: relative; padding-left: 50%; min-height: 40px; } td:before { position: absolute; left: 10px; top: 12px; width: 45%; white-space: nowrap; font-weight: 600; color: #b87333; } tr { margin-bottom: 18px; } }
 .product-img { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; border: 1.5px solid #e5c07b; background: #fff; display: block; margin: 0 auto; }
