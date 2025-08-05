@@ -100,15 +100,15 @@ async function renderProducts() {
     // Aplicar cor amarela se há desconto
     if (discount > 0) {
       tr.style.backgroundColor = '#fff3cd';
-      tr.style.borderLeft = '4px solid #ffc107';
+        tr.style.borderLeft = '4px solid #ffc107';
     }
     
     // Aplicar efeito especial se há promoção
     if (prod.promo && prod.promo.percent > 0) {
       tr.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
-      tr.style.borderLeft = '4px solid #ffc107';
+        tr.style.borderLeft = '4px solid #ffc107';
       tr.style.boxShadow = '0 4px 15px rgba(255, 193, 7, 0.2)';
-      tr.style.animation = 'promoGlow 3s ease-in-out infinite';
+       tr.style.animation = 'promoGlow 3s ease-in-out infinite';
       tr.classList.add('promo-row');
     }
     
