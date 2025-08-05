@@ -2,33 +2,131 @@
 const CLOUDINARY_CLOUD_NAME = 'dnl9vuqdi'; // Substitua pelo seu cloud name
 const CLOUDINARY_UPLOAD_PRESET = 'produtos_present'; // Substitua pelo seu upload preset
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+const CLOUDINARY_RAW_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`;
+const CLOUDINARY_FETCH_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/produtos-loja.json`;
 
 // Verificar se Cloudinary está configurado
 const isCloudinaryConfigured = () => {
   return CLOUDINARY_CLOUD_NAME !== 'SEU_CLOUD_NAME' && CLOUDINARY_UPLOAD_PRESET !== 'SEU_UPLOAD_PRESET';
 };
 
-// Utilidades para localStorage
+// Função para salvar produtos no Cloudinary
+async function saveProductsToCloudinary(products) {
+  try {
+    const jsonFile = new Blob([JSON.stringify(products, null, 2)], { type: 'application/json' });
+    
+    const formData = new FormData();
+    formData.append('file', jsonFile);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('public_id', 'produtos-loja');
+    formData.append('resource_type', 'raw');
+    
+    const response = await fetch(CLOUDINARY_RAW_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      console.log('Produtos sincronizados com Cloudinary!');
+      return true;
+    }
+  } catch (error) {
+    console.error('Erro ao sincronizar com Cloudinary:', error);
+  }
+  return false;
+}
+
+// Função para carregar produtos do Cloudinary
+async function loadProductsFromCloudinary() {
+  try {
+    const response = await fetch(CLOUDINARY_FETCH_URL + '?t=' + Date.now()); // Cache bust
+    if (response.ok) {
+      const products = await response.json();
+      return products;
+    }
+  } catch (error) {
+    console.log('Produtos ainda não sincronizados no Cloudinary, usando localStorage');
+  }
+  return null;
+}
+
+// Utilidades para localStorage (com sincronização Cloudinary)
 function getProducts() {
   return JSON.parse(localStorage.getItem('products') || '[]');
 }
-function saveProducts(products) {
+
+async function saveProducts(products) {
+  // Salva local primeiro (backup)
   localStorage.setItem('products', JSON.stringify(products));
+  
+  // Sincroniza com Cloudinary
+  await saveProductsToCloudinary(products);
+}
+
+// Função para carregar produtos (prioriza Cloudinary)
+async function loadProducts() {
+  const cloudinaryProducts = await loadProductsFromCloudinary();
+  if (cloudinaryProducts) {
+    // Se encontrou no Cloudinary, atualiza localStorage
+    localStorage.setItem('products', JSON.stringify(cloudinaryProducts));
+    return cloudinaryProducts;
+  }
+  // Se não encontrou no Cloudinary, usa localStorage
+  return getProducts();
 }
 
 // Renderização da tabela
-function renderProducts() {
+async function renderProducts() {
   const tbody = document.querySelector('#products-table tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Carregando produtos...</td></tr>';
+  
+  const products = await loadProducts();
   tbody.innerHTML = '';
-  const products = getProducts();
+  
+  if (products.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #888;">Nenhum produto cadastrado</td></tr>';
+    return;
+  }
+  
   products.forEach((prod, idx) => {
     const tr = document.createElement('tr');
+    const discount = prod.discount || 0;
+    const discountText = discount > 0 ? 
+      `<div class='discount-info'>
+          <span class='discount-percent'><i class="fas fa-percentage"></i> ${discount}%</span>
+          <span class='final-price'>R$ ${(prod.price * (1 - discount/100)).toFixed(2)}</span>
+        </div>` : '-';
+    
+    // Aplicar cor amarela se há desconto
+    if (discount > 0) {
+      tr.style.backgroundColor = '#fff3cd';
+      tr.style.borderLeft = '4px solid #ffc107';
+    }
+    
+    // Aplicar efeito especial se há promoção
+    if (prod.promo && prod.promo.percent > 0) {
+      tr.style.background = 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)';
+      tr.style.borderLeft = '4px solid #ffc107';
+      tr.style.boxShadow = '0 4px 15px rgba(255, 193, 7, 0.2)';
+      tr.style.animation = 'promoGlow 3s ease-in-out infinite';
+      tr.classList.add('promo-row');
+    }
+    
+    const priceDisplay = prod.promo && prod.promo.percent > 0 ? 
+      `<div class='price-container'>
+        <span class='original-price'>R$ ${Number(prod.price).toFixed(2)}</span>
+        <span class='promo-price'>R$ ${(prod.price*(1-prod.promo.percent/100)).toFixed(2)}</span>
+        <span class='savings'>Economize R$ ${(prod.price * prod.promo.percent / 100).toFixed(2)}</span>
+      </div>` : 
+      `R$ ${Number(prod.price).toFixed(2)}`;
+    
     tr.innerHTML = `
       <td><img src="${prod.image}" alt="${prod.name}" class="product-img"></td>
       <td>${prod.name}</td>
       <td>${prod.desc}</td>
       <td>${prod.category}</td>
-      <td>R$ ${Number(prod.price).toFixed(2)}</td>
+      <td>${priceDisplay}</td>
+      <td class="discount-cell">${discountText}</td>
       <td>
         <button class='action-btn edit' title='Editar' onclick='editProduct(${idx})'><i class='fa fa-edit'></i></button>
         <button class='action-btn delete' title='Excluir' onclick='deleteProduct(${idx})'><i class='fa fa-trash'></i></button>
@@ -104,6 +202,7 @@ form.onsubmit = async function(e) {
   const name = document.getElementById('product-name').value.trim();
   const desc = document.getElementById('product-desc').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
+  const discount = parseFloat(document.getElementById('product-discount').value) || 0;
   const category = document.getElementById('product-category').value.trim();
   
   if(!name || !desc || !category || isNaN(price) || price < 0) {
@@ -134,23 +233,25 @@ form.onsubmit = async function(e) {
      
      let products = getProducts();
      if(id) {
-       products[id] = {...products[id], name, desc, price, image, category};
-       Swal.fire('Produto atualizado!','', 'success');
+       products[id] = {...products[id], name, desc, price, discount, image, category};
+       Swal.fire('Produto atualizado e sincronizado!','', 'success');
      } else {
-       products.push({name, desc, price, image, category});
-       const message = isCloudinaryConfigured() ? 
-         'Produto adicionado!' : 
-         'Produto adicionado! (Configure Cloudinary para melhor performance)';
-       Swal.fire(message,'', 'success');
+       products.push({name, desc, price, discount, image, category});
+       Swal.fire('Produto adicionado e sincronizado!','', 'success');
      }
-     saveProducts(products);
+     
+     // Salva e sincroniza com Cloudinary
+     await saveProducts(products);
+     
      form.reset();
      document.getElementById('product-image-file').value = '';
      document.getElementById('product-image-url').value = '';
      document.getElementById('product-id').value = '';
      saveBtn.textContent = 'Adicionar Produto';
      cancelBtn.style.display = 'none';
-     renderProducts();
+     
+     // Recarrega a tabela
+     await renderProducts();
    } catch (error) {
      console.error('Erro ao salvar produto:', error);
      if (error.message.includes('Cloudinary') || error.message.includes('upload')) {
@@ -178,6 +279,7 @@ window.editProduct = function(idx) {
   document.getElementById('product-name').value = prod.name;
   document.getElementById('product-desc').value = prod.desc;
   document.getElementById('product-price').value = prod.price;
+  document.getElementById('product-discount').value = prod.discount || 0;
   document.getElementById('product-image-url').value = prod.image.startsWith('data:') ? '' : prod.image;
   document.getElementById('product-image-file').value = '';
   document.getElementById('product-category').value = prod.category;
@@ -185,24 +287,25 @@ window.editProduct = function(idx) {
   cancelBtn.style.display = 'inline-block';
 };
 
-window.deleteProduct = function(idx) {
-  Swal.fire({
+window.deleteProduct = async function(idx) {
+  const result = await Swal.fire({
     title: 'Tem certeza?',
     text: 'Esta ação não pode ser desfeita!',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#e11d48',
     cancelButtonColor: '#2563eb',
-    confirmButtonText: 'Sim, excluir!'
-  }).then((result) => {
-    if(result.isConfirmed) {
-      let products = getProducts();
-      products.splice(idx,1);
-      saveProducts(products);
-      renderProducts();
-      Swal.fire('Excluído!','Produto removido.','success');
-    }
+    confirmButtonText: 'Sim, excluir!',
+    cancelButtonText: 'Cancelar'
   });
+  
+  if (result.isConfirmed) {
+    let products = getProducts();
+    products.splice(idx, 1);
+    await saveProducts(products);
+    await renderProducts();
+    Swal.fire('Excluído!', 'Produto removido e sincronizado.', 'success');
+  }
 };
 
 
@@ -252,8 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-window.onload = function() {
-  renderProducts();
+window.onload = async function() {
+  await renderProducts();
 };
 window.debugListProducts = function() {
   alert(JSON.stringify(getProducts(), null, 2));
