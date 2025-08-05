@@ -23,8 +23,8 @@
           <textarea id="product-desc" required></textarea>
         </div>
         <div class="form-group">
-          <label for="product-price">Preço (R$)</label>
-          <input type="number" id="product-price" min="0" step="0.01" required>
+          <label for="product-category">Categoria</label>
+          <input type="text" id="product-category" required>
         </div>
         <div class="form-group">
           <label for="product-discount">Desconto (%)</label>
@@ -32,13 +32,19 @@
         </div>
         <div class="form-group">
           <label for="product-image">Imagem do Produto</label>
-          <input type="url" id="product-image-url" placeholder="URL da imagem">
-          <span style="text-align:center; margin: 8px 0; color:#888;">ou</span>
-          <input type="file" id="product-image-file" accept="image/*">
+          <div class="image-input-container">
+            <div class="image-input-item">
+              <input type="url" id="product-image-url" placeholder="URL da imagem">
+            </div>
+            <span class="or-separator">ou</span>
+            <div class="image-input-item">
+              <input type="file" id="product-image-file" accept="image/*">
+            </div>
+          </div>
         </div>
         <div class="form-group">
-          <label for="product-category">Categoria</label>
-          <input type="text" id="product-category" required>
+          <label for="product-price">Preço (R$)</label>
+          <input type="number" id="product-price" min="0" step="0.01" required>
         </div>
         <button type="submit" id="save-btn">Adicionar Produto</button>
         <button type="button" id="cancel-btn" style="display:none;">Cancelar</button>
