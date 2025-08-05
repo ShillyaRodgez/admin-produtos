@@ -103,11 +103,17 @@ async function renderProducts(productsToRender = null) {
   products.forEach((prod, idx) => {
     const tr = document.createElement('tr');
     const discount = prod.discount || 0;
-    const discountText = discount > 0 ? 
+    const discountDisplay = discount > 0 ? 
       `<div class='discount-info'>
-          <span class='discount-percent'><i class="fas fa-percentage"></i> ${discount}%</span>
+          <span class='discount-percent' onclick='editDiscount(${idx}, ${discount})' style='cursor: pointer; color: #ff6600; font-weight: 600;' title='Clique para editar'>
+            <i class="fas fa-percentage"></i> ${discount}%
+          </span>
           <span class='final-price'>R$ ${(prod.price * (1 - discount/100)).toFixed(2)}</span>
-        </div>` : '-';
+        </div>` : 
+      `<span class='discount-icon' onclick='editDiscount(${idx}, 0)' style='cursor: pointer; color: #999; font-size: 18px;' title='Clique para adicionar desconto'>
+        <i class="fas fa-percentage"></i>
+      </span>`;
+    const discountText = discountDisplay;
     
     // Aplicar cor amarela se há desconto
     if (discount > 0) {
@@ -307,21 +313,91 @@ window.deleteProduct = async function(idx) {
     text: 'Esta ação não pode ser desfeita!',
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#e11d48',
-    cancelButtonColor: '#2563eb',
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
     confirmButtonText: 'Sim, excluir!',
     cancelButtonText: 'Cancelar'
   });
   
   if (result.isConfirmed) {
-    let products = getProducts();
+    const products = getProducts();
     products.splice(idx, 1);
     await saveProducts(products);
     await renderProducts();
-    updateCategoryFilter();
-    Swal.fire('Excluído!', 'Produto removido e sincronizado.', 'success');
+    
+    Swal.fire('Excluído!', 'Produto excluído com sucesso.', 'success');
   }
 };
+
+// Função para editar desconto com modal
+window.editDiscount = async function(idx, currentDiscount) {
+  const { value: discount } = await Swal.fire({
+    title: 'Editar Desconto',
+    html: `
+      <div style="text-align: left; margin-bottom: 15px;">
+        <label for="discount-input" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">Desconto (%):</label>
+        <input id="discount-input" type="number" min="0" max="100" step="0.01" value="${currentDiscount}" 
+          style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px; text-align: center;">
+        <small style="color: #6c757d; font-size: 12px;">Digite um valor entre 0 e 100</small>
+      </div>
+    `,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Aplicar Desconto',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d',
+    focusConfirm: false,
+    preConfirm: () => {
+      const value = document.getElementById('discount-input').value;
+      const discount = parseFloat(value) || 0;
+      
+      if (discount < 0 || discount > 100) {
+        Swal.showValidationMessage('O desconto deve estar entre 0% e 100%');
+        return false;
+      }
+      
+      return discount;
+    }
+  });
+  
+  if (discount !== undefined) {
+    await updateDiscount(idx, discount);
+  }
+};
+
+// Função para atualizar desconto
+window.updateDiscount = async function(idx, newDiscount) {
+  const discount = parseFloat(newDiscount) || 0;
+  
+  // Atualizar o produto
+  const products = getProducts();
+  if (products[idx]) {
+    products[idx].discount = discount;
+    await saveProducts(products);
+    
+    // Atualizar a tabela
+    await renderProducts();
+    
+    if (discount > 0) {
+      Swal.fire({
+        title: 'Desconto aplicado!',
+        text: `Desconto de ${discount}% aplicado com sucesso.`,
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } else {
+      Swal.fire({
+        title: 'Desconto removido!',
+        text: 'O desconto foi removido do produto.',
+        icon: 'info',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    }
+  }
+}
 
 
 
