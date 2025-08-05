@@ -236,7 +236,8 @@ form.onsubmit = async function(e) {
        products[id] = {...products[id], name, desc, price, discount, image, category};
        Swal.fire('Produto atualizado e sincronizado!','', 'success');
      } else {
-       products.push({name, desc, price, discount, image, category});
+       const currentDate = new Date().toISOString();
+       products.push({name, desc, price, discount, image, category, createdAt: currentDate});
        Swal.fire('Produto adicionado e sincronizado!','', 'success');
      }
      
@@ -347,13 +348,258 @@ function exportProducts() {
   });
 }
 
-// Event listener para o botão de exportar
+// Função auxiliar para carregar imagem como base64
+function loadImageAsBase64(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 15;
+        canvas.height = 15;
+        ctx.drawImage(img, 0, 0, 15, 15);
+        const imgData = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(imgData);
+      } catch (error) {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+// Função para gerar PDF
+function generatePDF(selectedMonth) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  const monthNames = {
+    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+    '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+    '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+  };
+  
+  const currentYear = new Date().getFullYear();
+  let title, fileName;
+  
+  if (selectedMonth === 'all') {
+    title = `Lista de Produtos - Todos os Meses ${currentYear}`;
+    fileName = `lista-produtos-todos-meses-${currentYear}.pdf`;
+  } else if (selectedMonth && monthNames[selectedMonth]) {
+    const monthName = monthNames[selectedMonth];
+    title = `Lista de Produtos - ${monthName} ${currentYear}`;
+    fileName = `lista-produtos-${monthName.toLowerCase()}-${currentYear}.pdf`;
+  } else {
+    title = 'Lista de Produtos';
+    fileName = 'lista-produtos.pdf';
+  }
+  
+  // Configurações do PDF
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 20;
+  let yPosition = 30;
+  const rowHeight = 20;
+  
+  // Título
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text(title, pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 20;
+  
+  // Cabeçalho da tabela
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text('Nome', margin, yPosition);
+  doc.text('Categoria', margin + 50, yPosition);
+  doc.text('Preço Original', margin + 90, yPosition);
+  doc.text('Desconto', margin + 130, yPosition);
+  doc.text('Valor Final', margin + 160, yPosition);
+  
+  yPosition += 10;
+  
+  // Linha separadora
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 10;
+  
+  // Produtos - filtrar por mês
+  let allProducts = getProducts();
+  let products = allProducts;
+  
+  // Filtrar produtos por mês se não for "all"
+   if (selectedMonth !== 'all' && selectedMonth) {
+     const currentDate = new Date();
+     const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+     
+     products = allProducts.filter(product => {
+       if (!product.createdAt) {
+         // Produtos antigos sem data - incluir apenas no mês atual
+         return selectedMonth === currentMonth;
+       }
+       const productDate = new Date(product.createdAt);
+       const productMonth = String(productDate.getMonth() + 1).padStart(2, '0');
+       const productYear = productDate.getFullYear();
+       return productMonth === selectedMonth && productYear === currentYear;
+     });
+   }
+   
+   // Verificar se há produtos para o período selecionado
+   if (products.length === 0) {
+     const periodText = selectedMonth === 'all' ? 'todos os meses' : monthNames[selectedMonth];
+     Swal.fire({
+       icon: 'info',
+       title: 'Nenhum produto encontrado',
+       text: `Não há produtos cadastrados para ${periodText} de ${currentYear}.`,
+       confirmButtonText: 'OK'
+     });
+     return;
+   }
+   
+   doc.setFont(undefined, 'normal');
+  
+  let totalOriginal = 0;
+  let totalFinal = 0;
+  
+  products.forEach((product, index) => {
+    if (yPosition > 250) { // Nova página se necessário
+      doc.addPage();
+      yPosition = 30;
+    }
+    
+    const finalPrice = product.discount > 0 ? 
+      (product.price * (1 - product.discount/100)) : 
+      product.price;
+    
+    totalOriginal += product.price;
+    totalFinal += finalPrice;
+    
+    // Textos do produto
+    doc.text(product.name.substring(0, 20), margin, yPosition + 5);
+    doc.text(product.category.substring(0, 15), margin + 50, yPosition + 5);
+    doc.text(`R$ ${product.price.toFixed(2)}`, margin + 90, yPosition + 5);
+    
+    if (product.discount > 0) {
+      doc.text(`${product.discount}%`, margin + 130, yPosition + 5);
+    } else {
+      doc.text('-', margin + 130, yPosition + 5);
+    }
+    
+    doc.text(`R$ ${finalPrice.toFixed(2)}`, margin + 160, yPosition + 5);
+    
+    yPosition += rowHeight;
+  });
+  
+  // Resumo separado
+  yPosition += 15;
+  if (yPosition > 230) {
+    doc.addPage();
+    yPosition = 30;
+  }
+  
+  doc.line(margin, yPosition, pageWidth - margin, yPosition);
+  yPosition += 15;
+  
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.text('RESUMO FINANCEIRO', margin, yPosition);
+  
+  // Adicionar informação do período
+  if (selectedMonth === 'all') {
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    yPosition += 8;
+    doc.text('(Relatório consolidado de todos os meses)', margin, yPosition);
+  } else if (selectedMonth && monthNames[selectedMonth]) {
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    yPosition += 8;
+    doc.text(`(Relatório do mês de ${monthNames[selectedMonth]})`, margin, yPosition);
+  }
+  
+  yPosition += 15;
+  
+  // Seção de valores sem desconto
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text('VALORES SEM DESCONTO:', margin, yPosition);
+  doc.setFont(undefined, 'normal');
+  yPosition += 10;
+  doc.text(`• Total de produtos: ${products.length}`, margin + 5, yPosition);
+  yPosition += 8;
+  doc.text(`• Valor total original: R$ ${totalOriginal.toFixed(2)}`, margin + 5, yPosition);
+  
+  yPosition += 15;
+  
+  // Seção de valores com desconto
+  doc.setFont(undefined, 'bold');
+  doc.text('VALORES COM DESCONTO:', margin, yPosition);
+  doc.setFont(undefined, 'normal');
+  yPosition += 10;
+  doc.text(`• Valor total final: R$ ${totalFinal.toFixed(2)}`, margin + 5, yPosition);
+  yPosition += 8;
+  doc.text(`• Economia total: R$ ${(totalOriginal - totalFinal).toFixed(2)}`, margin + 5, yPosition);
+  yPosition += 8;
+  const economyPercent = totalOriginal > 0 ? ((totalOriginal - totalFinal) / totalOriginal * 100).toFixed(1) : '0.0';
+  doc.text(`• Percentual de economia: ${economyPercent}%`, margin + 5, yPosition);
+  
+  // Download do PDF
+  doc.save(fileName);
+}
+
+// Event listeners
 document.addEventListener('DOMContentLoaded', function() {
   const exportBtn = document.getElementById('export-btn');
   if (exportBtn) {
     exportBtn.addEventListener('click', exportProducts);
   }
+  
+  const pdfBtn = document.getElementById('pdf-btn');
+  if (pdfBtn) {
+    pdfBtn.addEventListener('click', openMonthModal);
+  }
+  
+  // Event listeners para o modal
+  const cancelPdfBtn = document.getElementById('cancel-pdf');
+  if (cancelPdfBtn) {
+    cancelPdfBtn.addEventListener('click', closeMonthModal);
+  }
+  
+  const confirmPdfBtn = document.getElementById('confirm-pdf');
+  if (confirmPdfBtn) {
+    confirmPdfBtn.addEventListener('click', confirmPDFGeneration);
+  }
+  
+  const closeBtn = document.querySelector('.close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeMonthModal);
+  }
+  
+  // Fechar modal clicando fora dele
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('month-modal');
+    if (event.target === modal) {
+      closeMonthModal();
+    }
+  });
 });
+
+// Funções do modal
+function openMonthModal() {
+  document.getElementById('month-modal').style.display = 'block';
+}
+
+function closeMonthModal() {
+  document.getElementById('month-modal').style.display = 'none';
+}
+
+function confirmPDFGeneration() {
+  const selectedMonth = document.getElementById('month-selector').value;
+  closeMonthModal();
+  generatePDF(selectedMonth);
+}
 
 window.onload = async function() {
   await renderProducts();

@@ -50,6 +50,10 @@
         <button type="button" id="export-btn" class="export-btn">
           <i class="fas fa-download"></i> Exportar para Loja
         </button>
+        <button type="button" id="pdf-btn" class="export-btn pdf-btn">
+            <i class="fas fa-file-pdf"></i>
+            Download PDF
+        </button>
       </div>
       <table id="products-table">
         <thead>
@@ -70,6 +74,40 @@
     </section>
 
   </div>
-  <script src="script.js"></script>
+
+    <!-- Modal para seleção de mês -->
+    <div id="month-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Selecionar Período para Download</h3>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Escolha o período para gerar o relatório PDF:</p>
+                <select id="month-selector" class="month-selector-modal">
+                    <option value="all">Todos os Meses</option>
+                    <option value="01">Janeiro</option>
+                    <option value="02">Fevereiro</option>
+                    <option value="03">Março</option>
+                    <option value="04">Abril</option>
+                    <option value="05">Maio</option>
+                    <option value="06">Junho</option>
+                    <option value="07">Julho</option>
+                    <option value="08">Agosto</option>
+                    <option value="09">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancel-pdf" class="btn-cancel">Cancelar</button>
+                <button type="button" id="confirm-pdf" class="btn-confirm">Gerar PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
