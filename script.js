@@ -76,15 +76,27 @@ async function loadProducts() {
 }
 
 // Renderização da tabela
-async function renderProducts() {
+// Variáveis globais para filtros
+let allProducts = [];
+let filteredProducts = [];
+
+async function renderProducts(productsToRender = null) {
   const tbody = document.querySelector('#products-table tbody');
   tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Carregando produtos...</td></tr>';
   
-  const products = await loadProducts();
+  if (productsToRender === null) {
+    allProducts = await loadProducts();
+    filteredProducts = [...allProducts];
+    updateCategoryFilter();
+  } else {
+    filteredProducts = productsToRender;
+  }
+  
+  const products = filteredProducts;
   tbody.innerHTML = '';
   
   if (products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #888;">Nenhum produto cadastrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #888;">Nenhum produto encontrado</td></tr>';
     return;
   }
   
@@ -251,8 +263,9 @@ form.onsubmit = async function(e) {
      saveBtn.textContent = 'Adicionar Produto';
      cancelBtn.style.display = 'none';
      
-     // Recarrega a tabela
+     // Recarrega a tabela e atualiza filtros
      await renderProducts();
+     updateCategoryFilter();
    } catch (error) {
      console.error('Erro ao salvar produto:', error);
      if (error.message.includes('Cloudinary') || error.message.includes('upload')) {
@@ -305,6 +318,7 @@ window.deleteProduct = async function(idx) {
     products.splice(idx, 1);
     await saveProducts(products);
     await renderProducts();
+    updateCategoryFilter();
     Swal.fire('Excluído!', 'Produto removido e sincronizado.', 'success');
   }
 };
@@ -600,6 +614,59 @@ function confirmPDFGeneration() {
   closeMonthModal();
   generatePDF(selectedMonth);
 }
+
+// Funções de filtro
+function updateCategoryFilter() {
+  const categorySelect = document.getElementById('filter-category');
+  const categories = [...new Set(allProducts.map(product => product.category))].sort();
+  
+  // Limpar opções existentes (exceto "Todas as categorias")
+  categorySelect.innerHTML = '<option value="">Todas as categorias</option>';
+  
+  // Adicionar categorias únicas
+  categories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    categorySelect.appendChild(option);
+  });
+}
+
+function applyFilters() {
+  const nameFilter = document.getElementById('filter-name').value.toLowerCase().trim();
+  const categoryFilter = document.getElementById('filter-category').value;
+  
+  filteredProducts = allProducts.filter(product => {
+    const matchesName = !nameFilter || product.name.toLowerCase().includes(nameFilter);
+    const matchesCategory = !categoryFilter || product.category === categoryFilter;
+    return matchesName && matchesCategory;
+  });
+  
+  renderProducts(filteredProducts);
+}
+
+function clearFilters() {
+  document.getElementById('filter-name').value = '';
+  document.getElementById('filter-category').value = '';
+  filteredProducts = [...allProducts];
+  renderProducts(filteredProducts);
+}
+
+// Event listeners para filtros
+document.addEventListener('DOMContentLoaded', function() {
+  const filterName = document.getElementById('filter-name');
+  const filterCategory = document.getElementById('filter-category');
+  const clearFiltersBtn = document.getElementById('clear-filters');
+  
+  // Filtro em tempo real para nome
+  filterName.addEventListener('input', applyFilters);
+  
+  // Filtro para categoria
+  filterCategory.addEventListener('change', applyFilters);
+  
+  // Botão limpar filtros
+  clearFiltersBtn.addEventListener('click', clearFilters);
+});
 
 window.onload = async function() {
   await renderProducts();
