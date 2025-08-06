@@ -109,6 +109,78 @@ label {
   }
 }
 
+.category-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.category-input-wrapper select {
+  flex-grow: 1;
+  border-radius: 12px 0 0 12px;
+}
+
+
+.add-btn {
+  background: none;
+  color: #018c21;
+  border: none;
+  padding: 0;
+  margin: 0 8px 0 0;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  position: relative;
+  top: -10px;
+  outline: none;
+}
+
+.add-btn:focus {
+  outline: none;
+}
+
+.add-btn:active {
+  outline: none;
+}
+
+.add-btn:hover {
+  color: #ffc107;
+  background: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.delete-btn {
+    color: #a72400;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    position: relative;
+    top: -10px;
+    outline: none;
+}
+
+.delete-btn:focus {
+    outline: none;
+}
+
+.delete-btn:active {
+    outline: none;
+}
+
+.delete-btn:hover {
+    color: #ffc107;
+    background: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
 .image-input-container {
   display: flex;
   align-items: center;

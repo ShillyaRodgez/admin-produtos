@@ -79,8 +79,157 @@ async function loadProducts() {
 // Variáveis globais para filtros
 let allProducts = [];
 let filteredProducts = [];
+let categories = [];
+
+// Função para salvar categorias no Cloudinary
+async function saveCategoriesToCloudinary(categories) {
+  try {
+    const jsonFile = new Blob([JSON.stringify(categories, null, 2)], { type: 'application/json' });
+    
+    const formData = new FormData();
+    formData.append('file', jsonFile);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('public_id', 'categorias-loja'); // ID público para o arquivo de categorias
+    formData.append('resource_type', 'raw');
+    
+    const response = await fetch(CLOUDINARY_RAW_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      console.log('Categorias sincronizadas com Cloudinary!');
+      return true;
+    }
+  } catch (error) {
+    console.error('Erro ao sincronizar categorias com Cloudinary:', error);
+  }
+  return false;
+}
+
+// Função para carregar categorias do Cloudinary
+async function loadCategoriesFromCloudinary() {
+  try {
+    const response = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/categorias-loja.json?t=${Date.now()}`); // Cache bust
+    if (response.ok) {
+      const categories = await response.json();
+      return categories;
+    }
+  } catch (error) {
+    console.log('Categorias ainda não sincronizadas no Cloudinary, usando localStorage');
+  }
+  return null;
+}
+
+// Carregar categorias (prioriza Cloudinary)
+async function loadCategories() {
+  const cloudinaryCategories = await loadCategoriesFromCloudinary();
+  if (cloudinaryCategories) {
+    localStorage.setItem('categories', JSON.stringify(cloudinaryCategories));
+    categories = cloudinaryCategories;
+  } else {
+    categories = JSON.parse(localStorage.getItem('categories') || '["Sem Categoria"]');
+  }
+}
+
+// Salvar categorias (local e Cloudinary)
+async function saveCategories() {
+  localStorage.setItem('categories', JSON.stringify(categories));
+  await saveCategoriesToCloudinary(categories);
+}
+
+// Popular selects de categoria
+function populateCategorySelects() {
+  const productCategorySelect = document.getElementById('product-category');
+  const filterCategorySelect = document.getElementById('filter-category');
+  
+  const currentProductCategory = productCategorySelect.value;
+  const currentFilterCategory = filterCategorySelect.value;
+
+  productCategorySelect.innerHTML = '<option value="" disabled>Selecione uma categoria</option>';
+  filterCategorySelect.innerHTML = '<option value="">Todas as categorias</option>';
+
+  categories.forEach(cat => {
+    const option1 = new Option(cat, cat);
+    const option2 = new Option(cat, cat);
+    productCategorySelect.add(option1);
+    filterCategorySelect.add(option2);
+  });
+
+  productCategorySelect.value = currentProductCategory;
+  filterCategorySelect.value = currentFilterCategory;
+}
+
+// Adicionar nova categoria
+// Excluir categoria
+document.getElementById('delete-category-btn').addEventListener('click', async () => {
+  const { value: categoryToDelete } = await Swal.fire({
+    title: 'Excluir Categoria',
+    input: 'select',
+    inputOptions: {
+      ...categories.reduce((acc, cat) => ({ ...acc, [cat]: cat }), {})
+    },
+    inputPlaceholder: 'Selecione uma categoria para excluir',
+    showCancelButton: true,
+    confirmButtonText: 'Excluir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#dc3545',
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Você precisa selecionar uma categoria!';
+      }
+    }
+  });
+
+  if (categoryToDelete) {
+    // Verificar se a categoria está em uso
+    const products = getProducts();
+    const isCategoryInUse = products.some(p => p.category === categoryToDelete);
+
+    if (isCategoryInUse) {
+      Swal.fire('Erro!', 'Esta categoria está sendo usada por um ou mais produtos e não pode ser excluída.', 'error');
+      return;
+    }
+
+    categories = categories.filter(cat => cat !== categoryToDelete);
+    await saveCategories();
+    populateCategorySelects();
+    Swal.fire('Sucesso!', 'Categoria excluída.', 'success');
+  }
+});
+
+document.getElementById('add-category-btn').addEventListener('click', async () => {
+  const { value: newCategory } = await Swal.fire({
+    title: 'Adicionar Nova Categoria',
+    input: 'text',
+    inputLabel: 'Nome da Categoria',
+    inputPlaceholder: 'Digite o nome da nova categoria',
+    showCancelButton: true,
+    confirmButtonText: 'Adicionar',
+    cancelButtonText: 'Cancelar',
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Você precisa digitar um nome para a categoria!'
+      }
+      if (categories.includes(value.trim())) {
+        return 'Essa categoria já existe!'
+      }
+    }
+  });
+
+  if (newCategory) {
+    const trimmedCategory = newCategory.trim();
+    categories.push(trimmedCategory);
+    await saveCategories(); // Garante que a categoria seja salva antes de continuar
+    populateCategorySelects();
+    document.getElementById('product-category').value = trimmedCategory;
+    Swal.fire('Sucesso!', 'Nova categoria adicionada.', 'success');
+  }
+});
 
 async function renderProducts(productsToRender = null) {
+  await loadCategories();
+  populateCategorySelects();
   const tbody = document.querySelector('#products-table tbody');
   tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Carregando produtos...</td></tr>';
   
@@ -302,7 +451,13 @@ window.editProduct = function(idx) {
   document.getElementById('product-discount').value = prod.discount || 0;
   document.getElementById('product-image-url').value = prod.image.startsWith('data:') ? '' : prod.image;
   document.getElementById('product-image-file').value = '';
-  document.getElementById('product-category').value = prod.category;
+  const productCategorySelect = document.getElementById('product-category');
+  productCategorySelect.value = prod.category;
+  // Se a categoria do produto não existe mais, adiciona temporariamente
+  if (!categories.includes(prod.category)) {
+      const option = new Option(prod.category, prod.category, true, true);
+      productCategorySelect.add(option);
+  }
   saveBtn.textContent = 'Salvar Alterações';
   cancelBtn.style.display = 'inline-block';
 };
