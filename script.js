@@ -332,6 +332,18 @@ async function uploadToCloudinary(file) {
   }
 }
 
+// Função para mostrar o nome do arquivo selecionado
+document.getElementById('product-image-file').addEventListener('change', function(e) {
+  const fileName = e.target.files[0] ? e.target.files[0].name : 'Nenhum arquivo selecionado';
+  const fileNameDisplay = document.getElementById('file-name-display');
+  
+  if (fileNameDisplay) {
+    fileNameDisplay.textContent = fileName;
+    fileNameDisplay.style.display = 'inline-block';
+  }
+});
+
+
 function getImageInputValue() {
   const urlInput = document.getElementById('product-image-url');
   const fileInput = document.getElementById('product-image-file');
