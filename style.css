@@ -1,7 +1,7 @@
 body { 
-  background: linear-gradient(135deg, #f5f5dc 0%, #f0e68c 100%); 
-  color: #e8e8e8; 
-  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  color: #4a5568;
+  font-family: 'Poppins', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
   margin: 0; 
   min-height: 100vh;
 }
@@ -27,24 +27,29 @@ body {
   background-size: 200% 100%;
   animation: shimmer 3s infinite;
 }
-h1 { 
-  color: #8B0000; 
-  letter-spacing: 1.5px; 
-  font-weight: 700;
-  font-size: 2.5rem;
-  margin-bottom: 30px;
+h1 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 2.8rem;
   text-align: center;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #4a5568 0%, #2c3e50 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   position: relative;
+  padding-bottom: 15px;
 }
+
 h1::after {
   content: '';
   position: absolute;
-  bottom: -10px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background: linear-gradient(90deg, #8B0000, #DC143C);
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 2px;
 }
 label { 
@@ -56,10 +61,11 @@ label {
 }
 
 #product-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .form-group {
@@ -67,29 +73,32 @@ label {
   flex-direction: column;
 }
 
-.form-group:nth-child(2) {
-  grid-column: 1 / -1;
+.form-group:first-child {
+  flex: 1 1 100%;
 }
 
-.form-group:nth-child(6) {
-  grid-column: 1 / -1;
+.form-group.form-group-inline {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  flex: 1 1 100%;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 #product-form button {
-  grid-column: 1 / -1;
-  justify-self: center;
+  align-self: center;
   width: fit-content;
   margin-top: 10px;
 }
 
 @media (max-width: 768px) {
-  #product-form {
-    grid-template-columns: 1fr;
-  }
-  
-  .form-group:nth-child(2),
-  .form-group:nth-child(6) {
-    grid-column: 1;
+  .form-group.form-group-inline {
+    flex-direction: column;
   }
 }
 
@@ -109,6 +118,11 @@ label {
   margin-bottom: 0;
   width: 100%;
   box-sizing: border-box;
+}
+
+#product-image-url {
+  min-width: 350px;
+  max-width: 500px;
 }
 
 .or-separator {
@@ -140,11 +154,72 @@ label {
   }
 }
 
+
+
 #product-desc {
+    resize: none;
+    height: 52px;
+    min-height: 52px;
+    box-sizing: border-box;
+}
+
+/* Estilo moderno para o botão de escolher arquivo */
+#product-image-file {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.image-input-item {
+  position: relative;
+}
+
+.image-input-item:has(#product-image-file) {
+  display: flex;
+  align-items: center;
+}
+
+.image-input-item label[for="product-image-file"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 18px 24px;
   font-family: 'Poppins', sans-serif;
-  height: 20px;
-  resize: none;
-  overflow-y: auto;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  min-height: 52px;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.image-input-item label[for="product-image-file"]:hover {
+  background: #667eea;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.image-input-item label[for="product-image-file"]:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.image-input-item label[for="product-image-file"]::before {
+  content: "📁";
+  font-size: 1.2rem;
+}
+
+.image-input-item label[for="product-image-file"]:hover::before {
+  transform: scale(1.1);
 }
 input, select, textarea { 
   border: 1px solid #ddd; 
