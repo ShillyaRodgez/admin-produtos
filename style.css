@@ -1,18 +1,25 @@
-body { 
-  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-  color: #4a5568;
-  font-family: 'Poppins', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
-  margin: 0; 
-  min-height: 100vh;
+body {
+    font-family: 'Poppins', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; 
+    background-image: url('https://i.imgur.com/aCHrdDM.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; 
+    margin: 0; 
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #333;
 }
 .container { 
-  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%); 
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 20px; 
   box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 8px 25px rgba(0,0,0,0.1); 
   padding: 40px 32px; 
   max-width: 1200px; 
   margin: 40px auto; 
-  border: 1px solid rgba(139, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
 }
