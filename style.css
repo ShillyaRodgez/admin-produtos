@@ -237,11 +237,10 @@ label {
 
 #product-desc {
     resize: none;
-    height: 52px;
-    min-height: 52px;
-    box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
-    padding: 12px 18px 24px 18px;
+    line-height: 16px;
+    height: 52px !important;
+    min-height: 52px;
 }
 
 /* Estilo moderno para o botão de escolher arquivo */
@@ -337,6 +336,8 @@ input, select, textarea {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 2px 4px rgba(0,0,0,0.05);
   font-weight: 500;
+  height: 52px;
+  box-sizing: border-box;
 }
 input:focus, select:focus, textarea:focus { 
   border-color: #ffc107; 

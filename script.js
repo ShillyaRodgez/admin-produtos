@@ -38,15 +38,8 @@ async function saveProductsToCloudinary(products) {
 
 // Função para carregar produtos do Cloudinary
 async function loadProductsFromCloudinary() {
-  try {
-    const response = await fetch(CLOUDINARY_FETCH_URL + '?t=' + Date.now()); // Cache bust
-    if (response.ok) {
-      const products = await response.json();
-      return products;
-    }
-  } catch (error) {
-    console.log('Produtos ainda não sincronizados no Cloudinary, usando localStorage');
-  }
+  // Temporariamente desabilitado para evitar erros de rede
+  console.log('Carregamento do Cloudinary temporariamente desabilitado, usando localStorage');
   return null;
 }
 
@@ -109,15 +102,8 @@ async function saveCategoriesToCloudinary(categories) {
 
 // Função para carregar categorias do Cloudinary
 async function loadCategoriesFromCloudinary() {
-  try {
-    const response = await fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/categorias-loja.json?t=${Date.now()}`); // Cache bust
-    if (response.ok) {
-      const categories = await response.json();
-      return categories;
-    }
-  } catch (error) {
-    console.log('Categorias ainda não sincronizadas no Cloudinary, usando localStorage');
-  }
+  // Temporariamente desabilitado para evitar erros de rede
+  console.log('Carregamento do Cloudinary temporariamente desabilitado, usando localStorage');
   return null;
 }
 
@@ -146,7 +132,7 @@ function populateCategorySelects() {
   const currentProductCategory = productCategorySelect.value;
   const currentFilterCategory = filterCategorySelect.value;
 
-  productCategorySelect.innerHTML = '<option value="" disabled>Selecione uma categoria</option>';
+  productCategorySelect.innerHTML = '<option value="" disabled selected>Selecione uma categoria</option>';
   filterCategorySelect.innerHTML = '<option value="">Todas as categorias</option>';
 
   categories.forEach(cat => {
@@ -156,7 +142,10 @@ function populateCategorySelects() {
     filterCategorySelect.add(option2);
   });
 
-  productCategorySelect.value = currentProductCategory;
+  // Só restaura o valor se não estiver vazio
+  if (currentProductCategory) {
+    productCategorySelect.value = currentProductCategory;
+  }
   filterCategorySelect.value = currentFilterCategory;
 }
 
@@ -427,6 +416,8 @@ form.onsubmit = async function(e) {
      document.getElementById('product-image-file').value = '';
      document.getElementById('product-image-url').value = '';
      document.getElementById('product-id').value = '';
+     document.getElementById('file-name-display').textContent = '';
+     document.getElementById('product-category').value = '';
      saveBtn.textContent = 'Adicionar Produto';
      cancelBtn.style.display = 'none';
      
